@@ -1,82 +1,65 @@
-// src/services/documents.service.ts
-import api from './api.service';
+import api from "./api.service";
 
 export interface Document {
   id: string;
   title: string;
-  fileName: string;
+  content?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AskDocumentResponse {
   answer: string;
 }
 
-export interface UpdateDocumentDto {
-  title?: string;
-}
-
-export const DocumentsService = {
-  // POST /documents/upload
+class DocumentsService {
   async upload(file: File): Promise<Document> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await api.post(
-      '/documents/upload',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+    const response = await api.post("/documents/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
-    );
+    });
 
     return response.data;
-  },
+  }
 
-  // POST /documents/:id/ask
+  async getAll(): Promise<Document[]> {
+    const response = await api.get("/documents");
+    return response.data;
+  }
+
+  async getById(id: string): Promise<Document> {
+    const response = await api.get(`/documents/${id}`);
+    return response.data;
+  }
+
   async ask(
     documentId: string,
-    question: string,
+    question: string
   ): Promise<AskDocumentResponse> {
-    const response = await api.post(
-      `/documents/${documentId}/ask`,
-      { question },
-    );
+    const response = await api.post(`/documents/${documentId}/ask`, {
+      question,
+    });
 
     return response.data;
-  },
+  }
 
-  // GET /documents
-  async getAll(): Promise<Document[]> {
-    const response = await api.get('/documents');
-    return response.data;
-  },
-
-  // GET /documents/:id
-  async getById(documentId: string): Promise<Document> {
-    const response = await api.get(
-      `/documents/${documentId}`,
-    );
-    return response.data;
-  },
-
-  // PATCH /documents/:id
-  async update(
-    documentId: string,
-    data: UpdateDocumentDto,
-  ): Promise<Document> {
-    const response = await api.patch(
-      `/documents/${documentId}`,
-      data,
-    );
+  async update(documentId: string, title: string): Promise<Document> {
+    const response = await api.patch(`/documents/${documentId}`, {
+      title,
+    });
 
     return response.data;
-  },
+  }
 
-  // DELETE /documents/:id
-  async remove(documentId: string): Promise<void> {
+  async delete(documentId: string): Promise<void> {
     await api.delete(`/documents/${documentId}`);
-  },
-};
+  }
+}
+
+const documentsService = new DocumentsService();
+
+export default documentsService;
