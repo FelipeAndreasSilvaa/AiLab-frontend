@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { AuthService } from "@/service"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,16 +16,51 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/dashboard")
-    }, 1000)
-  }
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
+    e.preventDefault();
+  
+    setIsLoading(true);
+    setError('');
+  
+    try {
+      // Chama o AuthService.login()
+      const response = await AuthService.login({
+        email,
+        password,
+      });
+  
+      console.log(
+        'Login realizado com sucesso:',
+        response,
+      );
+  
+      // Verifica se o usuário foi salvo
+      console.log(
+        'Usuário salvo no localStorage:',
+        localStorage.getItem('user'),
+      );
+  
+      // Redireciona para o dashboard
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error(
+        'Erro no login:',
+        err.response?.data || err,
+      );
+  
+      setError(
+        err.response?.data?.message ||
+          'Erro ao fazer login.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
