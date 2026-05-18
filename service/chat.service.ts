@@ -55,4 +55,24 @@ export const ChatService = {
 
     return response.data;
   },
+
+  async updateChat(
+    chatId: string,
+    data: { title: string },
+  ) {
+    const response = await api.patch(
+      `/chat/${chatId}`,
+      data,
+    );
+  
+    return response.data;
+  },
+
+  async deleteChat(chatId: string) {
+    const response = await api.delete(
+      `/chat/${chatId}`,
+    );
+  
+    return response.data;
+  }
 };

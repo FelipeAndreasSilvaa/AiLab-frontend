@@ -20,12 +20,15 @@ interface Conversation {
 }
 
 interface ChatSidebarProps {
-  conversations: Conversation[]
-  activeId?: string
-  onNewChat: () => void
+  conversations: Conversation[];
+  activeId?: string;
+  onNewChat: () => void;
+  onDeleteConversation: (
+    id: string,
+  ) => void;
 }
 
-export function ChatSidebar({ conversations, activeId, onNewChat }: ChatSidebarProps) {
+export function ChatSidebar({ conversations, activeId, onNewChat, onDeleteConversation }: ChatSidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-muted/30">
       <div className="p-3">
@@ -63,9 +66,16 @@ export function ChatSidebar({ conversations, activeId, onNewChat }: ChatSidebarP
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>Renomear</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">
-                      Excluir
-                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDeleteConversation(conv.id);
+                    }}
+                  >
+                    Excluir
+                  </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
