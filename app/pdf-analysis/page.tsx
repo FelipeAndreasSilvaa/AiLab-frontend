@@ -22,7 +22,16 @@ import {
   FileQuestion,
   Send,
   Loader2,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { cn } from "@/lib/utils";
 import documentService from "@/service/documents.service";
@@ -78,10 +87,14 @@ export default function PDFAnalysisPage() {
 
       const documents = await documentService.getAll();
 
-      setFiles(documents);
+      // Remove duplicados vindos do backend
+      const uniqueDocuments = removeDuplicateDocuments(documents);
 
-      if (documents.length > 0) {
-        const firstDocument = documents[0];
+      setFiles(uniqueDocuments);
+
+      if (uniqueDocuments.length > 0) {
+        const firstDocument = uniqueDocuments[0];
+
         setSelectedFile(firstDocument);
 
         setChatMessages([
@@ -90,11 +103,61 @@ export default function PDFAnalysisPage() {
             `Olá! Selecionei o documento "${firstDocument.title}". Posso responder perguntas sobre ele.`
           ),
         ]);
+      } else {
+        setSelectedFile(null);
+        setChatMessages([]);
       }
     } catch (error) {
       console.error("Erro ao carregar documentos:", error);
     } finally {
       setLoadingFiles(false);
+    }
+  }
+
+  function removeDuplicateDocuments(documents: Document[]) {
+    const unique = new Map<string, Document>();
+
+    for (const doc of documents) {
+      unique.set(doc.id, doc);
+    }
+
+    return Array.from(unique.values());
+  }
+
+  async function handleDeleteDocument(document: Document) {
+    const confirmed = window.confirm(
+      `Deseja excluir o documento "${document.title}"?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await documentService.delete(document.id);
+
+      const updatedFiles = files.filter((file) => file.id !== document.id);
+
+      setFiles(updatedFiles);
+
+      if (selectedFile?.id === document.id) {
+        if (updatedFiles.length > 0) {
+          const nextFile = updatedFiles[0];
+
+          setSelectedFile(nextFile);
+
+          setChatMessages([
+            createMessage(
+              "assistant",
+              `Documento "${nextFile.title}" selecionado. Faça sua pergunta.`
+            ),
+          ]);
+        } else {
+          setSelectedFile(null);
+          setChatMessages([]);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao excluir documento:", error);
+      alert("Erro ao excluir documento.");
     }
   }
 
@@ -104,7 +167,9 @@ export default function PDFAnalysisPage() {
 
       const newDocument = await documentService.upload(file);
 
-      setFiles((prev) => [newDocument, ...prev]);
+      // Adiciona o novo documento e remove qualquer duplicado
+      setFiles((prev) => removeDuplicateDocuments([newDocument, ...prev]));
+
       setSelectedFile(newDocument);
 
       setChatMessages([
@@ -249,11 +314,12 @@ export default function PDFAnalysisPage() {
           <div className="flex-1 p-6">
             {selectedFile ? (
               <Card className="h-full border-border/50">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div>
-                    <CardTitle className="text-lg">
+                <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="truncate text-base font-semibold max-w-[220px]">
                       {selectedFile.title}
                     </CardTitle>
+
                     <CardDescription>
                       Enviado em{" "}
                       {new Date(selectedFile.createdAt).toLocaleDateString(
@@ -262,13 +328,28 @@ export default function PDFAnalysisPage() {
                     </CardDescription>
                   </div>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelectedFile(null)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteDocument(selectedFile)}
+                        className="text-red-500 focus:text-red-500"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir documento
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={() => setSelectedFile(null)}>
+                        <X className="mr-2 h-4 w-4" />
+                        Fechar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardHeader>
 
                 <CardContent className="h-[calc(100%-80px)]">
